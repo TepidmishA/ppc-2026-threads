@@ -159,7 +159,7 @@ class MorozovaSStrassenMultiplicationFuncTests : public ppc::util::BaseRunFuncTe
     return CompareMatrices(output_data, expected, n);
   }
 
-  [[nodiscard]] Matrix ExtractMatrixA(int n) const {
+  Matrix ExtractMatrixA(int n) const {
     Matrix a(n);
     int idx = 1;
     for (int i = 0; i < n; ++i) {
@@ -170,7 +170,7 @@ class MorozovaSStrassenMultiplicationFuncTests : public ppc::util::BaseRunFuncTe
     return a;
   }
 
-  [[nodiscard]] Matrix ExtractMatrixB(int n) const {
+  Matrix ExtractMatrixB(int n) const {
     Matrix b(n);
     int idx = 1 + (n * n);
     for (int i = 0; i < n; ++i) {
