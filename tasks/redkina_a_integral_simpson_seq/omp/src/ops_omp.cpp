@@ -14,7 +14,7 @@ namespace redkina_a_integral_simpson_seq {
 
 namespace {
 
-constexpr size_t kMaxDim = 3;  // Ограничиваем размерность для тестов (1-3)
+constexpr size_t kMaxDim = 10;  // максимальная поддерживаемая размерность (можно увеличить)
 
 inline int SimpsonCoeff(int idx, int n) {
   if (idx == 0 || idx == n) {
@@ -52,7 +52,7 @@ bool RedkinaAIntegralSimpsonOMP::ValidationImpl() {
     return false;
   }
   if (dim > kMaxDim) {
-    return false;  // превышена допустимая размерность
+    return false;  // превышение максимальной размерности
   }
 
   for (size_t i = 0; i < dim; ++i) {
@@ -108,14 +108,10 @@ bool RedkinaAIntegralSimpsonOMP::RunImpl() {
     double coeff0 = SimpsonCoeff(i0, static_cast<int>(n_ref[0]));
     double local_sum = 0.0;
 
-    // thread_local вектор для точки – создаётся один раз на поток
-    thread_local std::vector<double> point(kMaxDim);
-    // Убедимся, что размер соответствует dim_local (для случаев dim < kMaxDim)
-    if (point.size() > dim_local) {
-      point.resize(dim_local);
-    }
-
+    // Вектор для координат точки – создаётся один раз на итерацию внешнего цикла
+    std::vector<double> point(dim_local);
     std::array<int, kMaxDim> indices{};
+
     indices[0] = i0;
     for (size_t d = 1; d < dim_local; ++d) {
       indices[d] = 0;
