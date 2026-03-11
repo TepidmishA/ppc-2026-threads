@@ -13,6 +13,46 @@
 
 namespace redkina_a_integral_simpson_seq {
 
+namespace {
+
+void EvaluatePoint(const std::vector<double> &a, const std::vector<double> &h, const std::vector<int> &n,
+                   const std::vector<int> &indices, const std::function<double(const std::vector<double> &)> &func,
+                   std::vector<double> &point, double &sum) {
+  size_t dim = a.size();
+  double w_prod = 1.0;
+  for (size_t dim_idx = 0; dim_idx < dim; ++dim_idx) {
+    int idx = indices[dim_idx];
+    point[dim_idx] = a[dim_idx] + (static_cast<double>(idx) * h[dim_idx]);
+
+    int w = 0;
+    if (idx == 0 || idx == n[dim_idx]) {
+      w = 1;
+    } else if (idx % 2 == 1) {
+      w = 4;
+    } else {
+      w = 2;
+    }
+    w_prod *= static_cast<double>(w);
+  }
+  sum += w_prod * func(point);
+}
+
+bool AdvanceIndices(std::vector<int> &indices, const std::vector<int> &n) {
+  int dim = static_cast<int>(indices.size());
+  int d = dim - 1;
+  while (d >= 0 && indices[d] == n[d]) {
+    indices[d] = 0;
+    --d;
+  }
+  if (d < 0) {
+    return false;
+  }
+  ++indices[d];
+  return true;
+}
+
+}  // namespace
+
 RedkinaAIntegralSimpsonOMP::RedkinaAIntegralSimpsonOMP(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
@@ -51,8 +91,9 @@ bool RedkinaAIntegralSimpsonOMP::PreProcessingImpl() {
 bool RedkinaAIntegralSimpsonOMP::RunImpl() {
   size_t dim = a_.size();
 
-  // Локальные копии для использования в параллельной области (чтобы избежать ошибок C3028)
+  // Локальные копии, чтобы безопасно использовать их в параллельной области
   const std::vector<double> a_local = a_;
+  const std::vector<double> b_local = b_;
   const std::vector<int> n_local = n_;
   const auto func_local = func_;
 
@@ -60,7 +101,7 @@ bool RedkinaAIntegralSimpsonOMP::RunImpl() {
   std::vector<double> h(dim);
   double h_prod = 1.0;
   for (size_t i = 0; i < dim; ++i) {
-    h[i] = (b_[i] - a_local[i]) / static_cast<double>(n_local[i]);
+    h[i] = (b_local[i] - a_local[i]) / static_cast<double>(n_local[i]);
     h_prod *= h[i];
   }
 
@@ -74,8 +115,8 @@ bool RedkinaAIntegralSimpsonOMP::RunImpl() {
 
   double total_sum = 0.0;
 
-  // Устанавливаем число потоков согласно глобальным настройкам
-  omp_set_num_threads(ppc::util::GetNumThreads());
+  // Не вызываем omp_set_num_threads здесь — инфраструктура сама настраивает число потоков.
+  // Это позволяет избежать дополнительных аллокаций TLS, на которые жалуется valgrind.
 
 #pragma omp parallel default(none) shared(total_nodes, h, strides, a_local, n_local, func_local, dim) \
     reduction(+ : total_sum)
@@ -85,19 +126,18 @@ bool RedkinaAIntegralSimpsonOMP::RunImpl() {
 
 #pragma omp for schedule(static)
     for (int idx = 0; idx < total_nodes; ++idx) {
-      // Преобразование линейного индекса в многомерный
       int remainder = idx;
       for (size_t d = 0; d < dim; ++d) {
         indices[d] = remainder / strides[d];
         remainder %= strides[d];
       }
 
-      // Вычисление координат и весов Симпсона
       double w_prod = 1.0;
       for (size_t d = 0; d < dim; ++d) {
         int i_idx = indices[d];
         point[d] = a_local[d] + i_idx * h[d];
-        int w;
+
+        int w = 0;
         if (i_idx == 0 || i_idx == n_local[d]) {
           w = 1;
         } else if (i_idx % 2 == 1) {
