@@ -32,11 +32,11 @@ bool TelnovAIntegralRectangleOMP::RunImpl() {
   const double b = 1.0;
   const double h = (b - a) / static_cast<double>(n);
 
-  const int64_t total_points = static_cast<int64_t>(std::pow(n, d));
+  const auto total_points = static_cast<int64_t>(std::pow(n, d));
 
   double result = 0.0;
 
-#pragma omp parallel for reduction(+ : result)
+#pragma omp parallel for default(none) reduction(+ : result) shared(total_points, n, d, a, h)
   for (int64_t idx = 0; idx < total_points; idx++) {
     int64_t tmp = idx;
     double f_value = 0.0;
@@ -45,7 +45,7 @@ bool TelnovAIntegralRectangleOMP::RunImpl() {
       const int coord_index = static_cast<int>(tmp % n);
       tmp /= n;
 
-      const double x = a + (static_cast<double>(coord_index) + 0.5) * h;
+      const double x = a + ((static_cast<double>(coord_index) + 0.5) * h);
       f_value += x;
     }
 
