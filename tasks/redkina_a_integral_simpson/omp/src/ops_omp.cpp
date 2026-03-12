@@ -1,4 +1,4 @@
-#include "redkina_a_integral_simpson_seq/omp/include/ops_omp.hpp"
+#include "redkina_a_integral_simpson/omp/include/ops_omp.hpp"
 
 #include <omp.h>
 
@@ -7,9 +7,9 @@
 #include <functional>
 #include <vector>
 
-#include "redkina_a_integral_simpson_seq/common/include/common.hpp"
+#include "redkina_a_integral_simpson/common/include/common.hpp"
 
-namespace redkina_a_integral_simpson_seq {
+namespace redkina_a_integral_simpson {
 
 RedkinaAIntegralSimpsonOMP::RedkinaAIntegralSimpsonOMP(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
@@ -118,4 +118,4 @@ bool RedkinaAIntegralSimpsonOMP::PostProcessingImpl() {
   return true;
 }
 
-}  // namespace redkina_a_integral_simpson_seq
+}  // namespace redkina_a_integral_simpson

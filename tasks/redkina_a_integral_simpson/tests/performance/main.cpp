@@ -4,12 +4,12 @@
 #include <utility>
 #include <vector>
 
-#include "redkina_a_integral_simpson_seq/common/include/common.hpp"
-#include "redkina_a_integral_simpson_seq/omp/include/ops_omp.hpp"
-#include "redkina_a_integral_simpson_seq/seq/include/ops_seq.hpp"
+#include "redkina_a_integral_simpson/common/include/common.hpp"
+#include "redkina_a_integral_simpson/omp/include/ops_omp.hpp"
+#include "redkina_a_integral_simpson/seq/include/ops_seq.hpp"
 #include "util/include/perf_test_util.hpp"
 
-namespace redkina_a_integral_simpson_seq {
+namespace redkina_a_integral_simpson {
 
 class RedkinaAIntegralSimpsonPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
  public:
@@ -41,10 +41,10 @@ TEST_P(RedkinaAIntegralSimpsonPerfTests, RunPerfModes) {
 namespace {
 
 const auto kAllPerfTasksSeq =
-    ppc::util::MakeAllPerfTasks<InType, RedkinaAIntegralSimpsonSEQ>(PPC_SETTINGS_redkina_a_integral_simpson_seq);
+    ppc::util::MakeAllPerfTasks<InType, RedkinaAIntegralSimpsonSEQ>(PPC_SETTINGS_redkina_a_integral_simpson);
 
 const auto kAllPerfTasksOmp =
-    ppc::util::MakeAllPerfTasks<InType, RedkinaAIntegralSimpsonOMP>(PPC_SETTINGS_redkina_a_integral_simpson_seq);
+    ppc::util::MakeAllPerfTasks<InType, RedkinaAIntegralSimpsonOMP>(PPC_SETTINGS_redkina_a_integral_simpson);
 
 const auto kGtestValuesSeq = ppc::util::TupleToGTestValues(kAllPerfTasksSeq);
 const auto kGtestValuesOmp = ppc::util::TupleToGTestValues(kAllPerfTasksOmp);
@@ -56,4 +56,4 @@ INSTANTIATE_TEST_SUITE_P(RunModeTestsOmp, RedkinaAIntegralSimpsonPerfTests, kGte
 
 }  // namespace
 
-}  // namespace redkina_a_integral_simpson_seq
+}  // namespace redkina_a_integral_simpson
