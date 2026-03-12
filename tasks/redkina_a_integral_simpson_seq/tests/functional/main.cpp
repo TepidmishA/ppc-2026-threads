@@ -5,7 +5,6 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
-#include <numbers>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -47,9 +46,6 @@ class RedkinaAIntegralSimpsonFuncTests : public ppc::util::BaseRunFuncTests<InTy
 };
 
 namespace {
-
-const double kPi = std::numbers::pi;
-const double kE = std::numbers::e;
 
 InputData MakeInput(std::function<double(const std::vector<double> &)> func, std::vector<double> a,
                     std::vector<double> b, std::vector<int> n) {
