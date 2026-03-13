@@ -13,36 +13,8 @@ namespace kamaletdinov_r_bitwise_int {
 
 namespace {
 
-void CountingSortByDigitSequential(std::vector<int> &arr, int exp) {
+void CountingSortByDigit(std::vector<int> &arr, int exp) {
   const int n = static_cast<int>(arr.size());
-  std::vector<int> output(n);
-  std::array<int, 10> count = {};
-
-  for (int i = 0; i < n; i++) {
-    const int digit = (arr.at(i) / exp) % 10;
-    count.at(digit)++;
-  }
-
-  for (int i = 1; i < 10; i++) {
-    count.at(i) += count.at(i - 1);
-  }
-
-  for (int i = n - 1; i >= 0; i--) {
-    const int digit = (arr.at(i) / exp) % 10;
-    output.at(count.at(digit) - 1) = arr.at(i);
-    count.at(digit)--;
-  }
-
-  arr.swap(output);
-}
-
-void CountingSortByDigitParallel(std::vector<int> &arr, int exp) {
-  const int n = static_cast<int>(arr.size());
-  if (n < 2048) {
-    CountingSortByDigitSequential(arr, exp);
-    return;
-  }
-
   const int thread_count = omp_get_max_threads();
   std::vector<std::array<int, 10>> local_counts(thread_count);
 
@@ -108,7 +80,7 @@ void RadixSortPositiveParallel(std::vector<int> &arr) {
 
   const int max_val = *std::ranges::max_element(arr);
   for (int exp = 1; max_val / exp > 0; exp *= 10) {
-    CountingSortByDigitParallel(arr, exp);
+    CountingSortByDigit(arr, exp);
     if (exp > max_val / 10) {
       break;
     }
@@ -138,10 +110,10 @@ void BitwiseSortParallel(std::vector<int> &arr) {
 
   std::size_t index = 0;
   for (int i = static_cast<int>(neg.size()) - 1; i >= 0; i--) {
-    arr[index++] = -neg[i];
+    arr.at(index++) = -neg.at(i);
   }
   for (int value : pos) {
-    arr[index++] = value;
+    arr.at(index++) = value;
   }
 }
 
