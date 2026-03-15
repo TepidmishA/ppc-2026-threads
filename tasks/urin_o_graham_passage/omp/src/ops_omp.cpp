@@ -58,7 +58,7 @@ Point UrinOGrahamPassageOMP::FindLowestPointParallel(const InType &points) {
   int lowest_index = 0;
 
 #pragma omp parallel for default(none) shared(points, lowest_index)
-  for (int i = 1; i < static_cast<int>(points.size()); ++i) {
+  for (int i = 1; static_cast<size_t>(i) < points.size(); ++i) {
 #pragma omp critical
     {
       if (points[i].y < points[lowest_index].y - 1e-10 ||
@@ -107,7 +107,7 @@ std::vector<Point> UrinOGrahamPassageOMP::PrepareOtherPoints(const InType &point
     }
   }
 
-  std::sort(other_points.begin(), other_points.end(), [&p0](const Point &a, const Point &b) {
+  std::ranges::sort(other_points, [&p0](const Point &a, const Point &b) {  // Исправлено
     double angle_a = PolarAngle(p0, a);
     double angle_b = PolarAngle(p0, b);
 
@@ -124,25 +124,33 @@ std::vector<Point> UrinOGrahamPassageOMP::PrepareOtherPointsParallel(const InTyp
   std::vector<Point> other_points;
   other_points.reserve(points.size() - 1);
 
-#pragma omp parallel default(none) shared(points, p0, other_points)
+#ifdef _OPENMP
+#  pragma omp parallel default(none) shared(points, p0, other_points)
   {
     std::vector<Point> local_points;
-    local_points.reserve(points.size() / omp_get_num_threads() + 1);
+    local_points.reserve((points.size() / omp_get_num_threads()) + 1);  // Исправлено
 
-#pragma omp for nowait
-    for (const auto &point : points) {
-      if (point != p0) {
-        local_points.push_back(point);
+#  pragma omp for nowait
+    for (int i = 0; static_cast<size_t>(i) < points.size(); ++i) {  // Исправлено
+      if (points[i] != p0) {
+        local_points.push_back(points[i]);
       }
     }
 
-#pragma omp critical
+#  pragma omp critical
     {
       other_points.insert(other_points.end(), local_points.begin(), local_points.end());
     }
   }
+#else
+  for (const auto &point : points) {
+    if (point != p0) {
+      other_points.push_back(point);
+    }
+  }
+#endif
 
-  std::sort(other_points.begin(), other_points.end(), [&p0](const Point &a, const Point &b) {
+  std::ranges::sort(other_points, [&p0](const Point &a, const Point &b) {  // Исправлено
     double angle_a = PolarAngle(p0, a);
     double angle_b = PolarAngle(p0, b);
 
@@ -159,7 +167,7 @@ bool UrinOGrahamPassageOMP::AreAllCollinear(const Point &p0, const std::vector<P
   bool all_collinear = true;
 
 #pragma omp parallel for default(none) shared(points, p0, all_collinear)
-  for (int i = 1; i < static_cast<int>(points.size()); ++i) {
+  for (int i = 1; static_cast<size_t>(i) < points.size(); ++i) {
     if (Orientation(p0, points[0], points[i]) != 0) {
 #pragma omp atomic write
       all_collinear = false;
