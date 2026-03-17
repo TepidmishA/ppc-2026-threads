@@ -54,15 +54,15 @@ double KiselevITestTaskOMP::ComputeIntegral(const std::vector<int> &steps) {
   const int func_type = GetInput().type_function;
 
 #pragma omp parallel for reduction(+ : result) default(none) shared(nx, ny, hx, hy, x0, y0, func_type)
-  for (int i = 0; i < nx + 1; i++) {
-    for (int j = 0; j < ny + 1; j++) {
-      double x = GetInput().left_bounds[0] + (i * hx);
-      double y = GetInput().left_bounds[1] + (j * hy);
+  for (int i = 0; i <= nx; i++) {
+    for (int j = 0; j <= ny; j++) {
+      const double x = x0 + i * hx;
+      const double y = y0 + j * hy;
 
-      double wx = (i == 0 || i == nx) ? 0.5 : 1.0;
-      double wy = (j == 0 || j == ny) ? 0.5 : 1.0;
+      const double wx = (i == 0 || i == nx) ? 0.5 : 1.0;
+      const double wy = (j == 0 || j == ny) ? 0.5 : 1.0;
 
-      result += wx * wy * FunctionTypeChoose(GetInput().type_function, x, y);
+      result += wx * wy * FunctionTypeChoose(func_type, x, y);
     }
   }
 
