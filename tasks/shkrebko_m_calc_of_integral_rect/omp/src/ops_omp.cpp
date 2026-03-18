@@ -46,15 +46,18 @@ bool ShkrebkoMCalcOfIntegralRectOMP::PreProcessingImpl() {
 
 bool ShkrebkoMCalcOfIntegralRectOMP::RunImpl() {
   const std::size_t dims = local_input_.limits.size();
+  const auto &limits = local_input_.limits;
+  const auto &n_steps = local_input_.n_steps;
+  const auto &func = local_input_.func;
 
   std::int64_t total_points = 1;
   std::vector<double> h(dims);
   double cell_volume = 1.0;
 
   for (std::size_t i = 0; i < dims; ++i) {
-    const double left = local_input_.limits[i].first;
-    const double right = local_input_.limits[i].second;
-    const int steps = local_input_.n_steps[i];
+    const double left = limits[i].first;
+    const double right = limits[i].second;
+    const int steps = n_steps[i];
 
     total_points *= static_cast<std::int64_t>(steps);
     h[i] = (right - left) / static_cast<double>(steps);
@@ -62,27 +65,31 @@ bool ShkrebkoMCalcOfIntegralRectOMP::RunImpl() {
   }
 
   double total_sum = 0.0;
+
   omp_set_num_threads(ppc::util::GetNumThreads());
 
-#pragma omp parallel default(none) shared(total_points, h, local_input_, dims) reduction(+ : total_sum)
+#pragma omp parallel default(none) shared(total_points, h, limits, n_steps, func, dims) reduction(+ : total_sum)
   {
     std::vector<double> point(dims);
+
 #pragma omp for
     for (std::int64_t idx = 0; idx < total_points; ++idx) {
       std::int64_t tmp = idx;
+
       for (int dim = static_cast<int>(dims) - 1; dim >= 0; --dim) {
-        const int coord_index = static_cast<int>(tmp % local_input_.n_steps[dim]);
-        tmp /= local_input_.n_steps[dim];
-        point[dim] = local_input_.limits[dim].first + ((static_cast<double>(coord_index) + 0.5) * h[dim]);
+        const int coord_index = static_cast<int>(tmp % n_steps[dim]);
+        tmp /= n_steps[dim];
+
+        point[dim] = limits[dim].first + ((static_cast<double>(coord_index) + 0.5) * h[dim]);
       }
-      total_sum += local_input_.func(point);
+
+      total_sum += func(point);
     }
   }
 
   res_ = total_sum * cell_volume;
   return true;
 }
-
 bool ShkrebkoMCalcOfIntegralRectOMP::PostProcessingImpl() {
   GetOutput() = res_;
   return true;
