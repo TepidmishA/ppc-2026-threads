@@ -106,8 +106,8 @@ void ConvexHullOMP::ExtractConnectedComponents() {
 
   std::vector<bool> visited(total_pixels, false);
 
-  std::mutex result_mutex;
   std::vector<std::vector<PixelPoint>> components;
+  std::mutex components_mutex;
 
   std::vector<std::pair<int, int>> start_points;
 
