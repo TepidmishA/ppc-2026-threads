@@ -8,14 +8,14 @@
 #include <utility>
 #include <vector>
 
-#include "util/include/util.hpp"
 #include "vinyaikina_e_multidimensional_integrals_simpson_method/common/include/common.hpp"
 
 namespace vinyaikina_e_multidimensional_integrals_simpson_method {
 namespace {
 
-double Сount(double simpson_factor, const std::vector<std::pair<double, double>> &limits,
-             std::vector<double> &actual_step, const std::function<double(const std::vector<double> &)> &function) {
+double СountIntegral(double simpson_factor, const std::vector<std::pair<double, double>> &limits,
+                     std::vector<double> &actual_step,
+                     const std::function<double(const std::vector<double> &)> &function) {
   std::stack<std::pair<std::vector<double>, double>> stack;
   stack.emplace(std::vector<double>(), 1.0);
 
@@ -34,7 +34,7 @@ double Сount(double simpson_factor, const std::vector<std::pair<double, double>
     size_t dim = point.size();
     double step = actual_step[dim] / 1.0;
 
-    int steps_count = lround((limits[dim].second - limits[dim].first) / step);
+    int steps_count = static_cast<int>(lround((limits[dim].second - limits[dim].first) / step));
 
     for (int i = 0; i <= steps_count; ++i) {
       double x = limits[dim].first + (i * step);
@@ -56,20 +56,18 @@ double Сount(double simpson_factor, const std::vector<std::pair<double, double>
 }
 };  // namespace
 
-VinyaikinaEMultidimIntegrSimpsonSEQ::VinyaikinaEMultidimIntegrSimpsonSEQ(const InType &in) : I_res_(0.0) {
+VinyaikinaEMultidimIntegrSimpsonSEQ::VinyaikinaEMultidimIntegrSimpsonSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
 }
 
 bool VinyaikinaEMultidimIntegrSimpsonSEQ::PreProcessingImpl() {
-  I_res_ = 0.0;
-
   return true;
 }
 
 bool VinyaikinaEMultidimIntegrSimpsonSEQ::ValidationImpl() {
   const auto &[h, limits, function] = GetInput();
-  return !(limits.empty() || !function || h > 0.01);
+  return !limits.empty() && function && h <= 0.01);
 }
 
 bool VinyaikinaEMultidimIntegrSimpsonSEQ::RunImpl() {
@@ -79,7 +77,7 @@ bool VinyaikinaEMultidimIntegrSimpsonSEQ::RunImpl() {
   double simpson_factor = 1.0;
 
   for (size_t i = 0; i < limits.size(); i++) {
-    int quan_steps = lround((limits[i].second - limits[i].first) / h);
+    int quan_steps = static_cast<int>(lround((limits[i].second - limits[i].first) / h));
     if (quan_steps % 2 != 0) {
       quan_steps++;
     }
@@ -87,7 +85,7 @@ bool VinyaikinaEMultidimIntegrSimpsonSEQ::RunImpl() {
     simpson_factor *= actual_step[i] / 3.0;
   }
 
-  I_res_ = Сount(simpson_factor, limits, actual_step, function);
+  I_res_ = СountIntegral(simpson_factor, limits, actual_step, function);
 
   return true;
 }

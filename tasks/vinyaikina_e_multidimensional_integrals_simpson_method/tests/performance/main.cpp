@@ -3,10 +3,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-#include <functional>
-#include <numbers>
-#include <stack>
-#include <vector>
+#include <utility>
 
 #include "util/include/perf_test_util.hpp"
 #include "vinyaikina_e_multidimensional_integrals_simpson_method/common/include/common.hpp"

@@ -1,10 +1,13 @@
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
 #include <numbers>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "util/include/func_test_util.hpp"
@@ -88,27 +91,27 @@ double Intxy2d(double a1, double b1, double a2, double b2) {
 }
 
 double IntxPlusy2d(double a1, double b1, double a2, double b2) {
-  return (b2 - a2) * (b1 * b1 - a1 * a1) / 2.0 + (b1 - a1) * (b2 * b2 - a2 * a2) / 2.0;
+  return ((b2 - a2) * (b1 * b1 - a1 * a1) / 2.0) + ((b1 - a1) * (b2 * b2 - a2 * a2) / 2.0);
 }
 
 double Intx2y2d(double a1, double b1, double a2, double b2) {
   return Intx21d(a1, b1) * IntLinear1d(a2, b2);
 }
 
-double Intxyz_3d(double a1, double b1, double a2, double b2, double a3, double b3) {
+double Intxyz3d(double a1, double b1, double a2, double b2, double a3, double b3) {
   return IntLinear1d(a1, b1) * IntLinear1d(a2, b2) * IntLinear1d(a3, b3);
 }
 
-double Intx2_y2_z2_3d(double a1, double b1, double a2, double b2, double a3, double b3) {
+double Intx2Y2Z23d(double a1, double b1, double a2, double b2, double a3, double b3) {
   return Intx21d(a1, b1) * Intx21d(a2, b2) * Intx21d(a3, b3);
 }
 
-double Intexp_sum_3d(double a1, double b1, double a2, double b2, double a3, double b3) {
+double IntexpSum3d(double a1, double b1, double a2, double b2, double a3, double b3) {
   return IntExp1d(a1, b1) * IntExp1d(a2, b2) * IntExp1d(a3, b3);
 }
 
 auto one = [](const std::vector<double> &) { return 1.0; };
-auto Linear1d = [](const std::vector<double> &x) { return x[0]; };
+auto linear1d = [](const std::vector<double> &x) { return x[0]; };
 auto sin1d = [](const std::vector<double> &x) { return std::sin(x[0]); };
 auto x21d = [](const std::vector<double> &x) { return x[0] * x[0]; };
 auto x31d = [](const std::vector<double> &x) { return x[0] * x[0] * x[0]; };
@@ -155,13 +158,13 @@ const std::array<TestType, 16> kTests = {{
     TestType{"x2_y2d_0_1_x_0_1", InType{0.005, {{0.0, 1.0}, {0.0, 1.0}}, x2_y2d}, Intx2y2d(0.0, 1.0, 0.0, 1.0)},
 
     TestType{"xyz_3d_0_1_x3", InType{0.005, {{0.0, 0.75}, {0.0, 0.75}, {0.0, 0.75}}, xyz_3d},
-             Intxyz_3d(0.0, 0.75, 0.0, 0.75, 0.0, 0.75)},
+             Intxyz3d(0.0, 0.75, 0.0, 0.75, 0.0, 0.75)},
 
     TestType{"x2_y2_z2_3d_0_1_x3", InType{0.01, {{0.0, 1.0}, {0.0, 1.0}, {0.0, 1.0}}, x2_y2_z2_3d},
-             Intx2_y2_z2_3d(0.0, 1.0, 0.0, 1.0, 0.0, 1.0)},
+             Intx2Y2Z23d(0.0, 1.0, 0.0, 1.0, 0.0, 1.0)},
 
     TestType{"exp_sum_3d_0_05_x3", InType{0.005, {{0.0, 0.5}, {0.0, 0.5}, {0.0, 0.5}}, exp_sum_3d},
-             Intexp_sum_3d(0.0, 0.5, 0.0, 0.5, 0.0, 0.5)},
+             IntexpSum3d(0.0, 0.5, 0.0, 0.5, 0.0, 0.5)},
 }};
 
 const auto kTaskName = PPC_SETTINGS_vinyaikina_e_multidimensional_integrals_simpson_method;
