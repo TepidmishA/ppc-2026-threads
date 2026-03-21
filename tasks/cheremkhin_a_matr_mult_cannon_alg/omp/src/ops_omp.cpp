@@ -48,7 +48,6 @@ void MulAddBlock(const std::vector<double> &a, const std::vector<double> &b, std
       const std::size_t k = k0 + kk;
       const double aik = a[a_row + k];
       const double *b_block = b.data() + (k * n) + j0;
-#pragma omp simd
       for (std::int64_t jj = 0; jj < bs64; ++jj) {
         c_block[jj] += aik * b_block[jj];
       }
