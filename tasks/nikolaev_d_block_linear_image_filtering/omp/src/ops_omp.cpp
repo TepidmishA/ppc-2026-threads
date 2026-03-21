@@ -48,7 +48,7 @@ bool NikolaevDBlockLinearImageFilteringOMP::RunImpl() {
   const std::array<std::array<int, 3>, 3> kernel = {{{1, 2, 1}, {2, 4, 2}, {1, 2, 1}}};
   const int sum = 16;
 
-  #pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static)
   for (int ny = 0; ny < height; ++ny) {
     for (int nx = 0; nx < width; ++nx) {
       for (int ch = 0; ch < 3; ++ch) {
