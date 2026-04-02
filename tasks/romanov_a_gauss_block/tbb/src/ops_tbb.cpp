@@ -1,7 +1,5 @@
 #include "romanov_a_gauss_block/tbb/include/ops_tbb.hpp"
 
-#include <oneapi/tbb/blocked_range2d.h>
-#include <oneapi/tbb/global_control.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <tbb/tbb.h>
 
@@ -9,9 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <tuple>
-#include <util/include/util.hpp>
 #include <vector>
 
 #include "romanov_a_gauss_block/common/include/common.hpp"
@@ -54,7 +50,7 @@ int ApplyKernel(const std::vector<uint8_t> &img, int row, int col, int channel, 
 
 void ProcessFullBlock(const std::vector<uint8_t> &initial_picture, std::vector<uint8_t> &result_picture, int width,
                       int height, int start_row, int start_col) {
-  const std::array<std::array<int, 3>, 3> kernel = {{{1, 2, 1}, {2, 4, 2}, {1, 2, 1}}};
+  static constexpr std::array<std::array<int, 3>, 3> kernel = {{{1, 2, 1}, {2, 4, 2}, {1, 2, 1}}};
 
   for (int row = start_row; row < start_row + kBlockSize; ++row) {
     for (int col = start_col; col < start_col + kBlockSize; ++col) {
@@ -71,7 +67,7 @@ void ProcessFullBlock(const std::vector<uint8_t> &initial_picture, std::vector<u
 
 void ProcessPartBlock(const std::vector<uint8_t> &initial_picture, std::vector<uint8_t> &result_picture, int width,
                       int height, int start_row, int start_col) {
-  const std::array<std::array<int, 3>, 3> kernel = {{{1, 2, 1}, {2, 4, 2}, {1, 2, 1}}};
+  static constexpr std::array<std::array<int, 3>, 3> kernel = {{{1, 2, 1}, {2, 4, 2}, {1, 2, 1}}};
 
   const int end_row = std::min(height, start_row + kBlockSize);
   const int end_col = std::min(width, start_col + kBlockSize);
@@ -98,34 +94,28 @@ bool RomanovAGaussBlockTBB::RunImpl() {
   const std::vector<uint8_t> &initial_picture = std::get<2>(GetInput());
   std::vector<uint8_t> result_picture(static_cast<size_t>(height * width * 3));
 
-  const int num_row_blocks = (height + 1 - kBlockSize) / kBlockSize;
-  const int num_col_blocks = (width + 1 - kBlockSize) / kBlockSize;
+  const int num_row_blocks = height / kBlockSize;
+  const int num_col_blocks = width / kBlockSize;
 
-  tbb::parallel_for(tbb::blocked_range2d<int>(0, num_row_blocks, 1, 0, num_col_blocks, 1),
-                    [&](const tbb::blocked_range2d<int> &r) {
-    for (int bi = r.rows().begin(); bi < r.rows().end(); ++bi) {
-      for (int bj = r.cols().begin(); bj < r.cols().end(); ++bj) {
+  tbb::parallel_for(tbb::blocked_range<int>(0, num_row_blocks, 1), [&](const tbb::blocked_range<int> &r) {
+    for (int bi = r.begin(); bi != r.end(); ++bi) {
+      for (int bj = 0; bj < num_col_blocks; ++bj) {
         ProcessFullBlock(initial_picture, result_picture, width, height, bi * kBlockSize, bj * kBlockSize);
       }
     }
   });
 
-  if (width % kBlockSize != 0) {
-    tbb::parallel_for(tbb::blocked_range<int>(0, num_row_blocks, 1), [&](const tbb::blocked_range<int> &r) {
-      for (int bi = r.begin(); bi < r.end(); ++bi) {
-        ProcessPartBlock(initial_picture, result_picture, width, height, bi * kBlockSize, width - (width % kBlockSize));
-      }
-    });
-  }
+  tbb::parallel_for(tbb::blocked_range<int>(0, num_row_blocks, 1), [&](const tbb::blocked_range<int> &r) {
+    for (int bi = r.begin(); bi != r.end(); ++bi) {
+      ProcessPartBlock(initial_picture, result_picture, width, height, bi * kBlockSize, width - (width % kBlockSize));
+    }
+  });
 
-  if (height % kBlockSize != 0) {
-    tbb::parallel_for(tbb::blocked_range<int>(0, num_col_blocks, 1), [&](const tbb::blocked_range<int> &r) {
-      for (int bj = r.begin(); bj < r.end(); ++bj) {
-        ProcessPartBlock(initial_picture, result_picture, width, height, height - (height % kBlockSize),
-                         bj * kBlockSize);
-      }
-    });
-  }
+  tbb::parallel_for(tbb::blocked_range<int>(0, num_col_blocks, 1), [&](const tbb::blocked_range<int> &r) {
+    for (int bj = r.begin(); bj != r.end(); ++bj) {
+      ProcessPartBlock(initial_picture, result_picture, width, height, height - (height % kBlockSize), bj * kBlockSize);
+    }
+  });
 
   ProcessPartBlock(initial_picture, result_picture, width, height, height - (height % kBlockSize),
                    width - (width % kBlockSize));
