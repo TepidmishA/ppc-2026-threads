@@ -1,11 +1,11 @@
 #include "krykov_e_sobel_op/tbb/include/ops_tbb.hpp"
 
+#include <tbb/tbb.h>
+
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <vector>
-
-#include <tbb/tbb.h>
 
 #include "krykov_e_sobel_op/common/include/common.hpp"
 
@@ -39,40 +39,33 @@ bool KrykovESobelOpTBB::PreProcessingImpl() {
 }
 
 bool KrykovESobelOpTBB::RunImpl() {
-    const std::array<std::array<int, 3>, 3> gx_kernel = {{{-1, 0, 1},
-                                                        {-2, 0, 2},
-                                                        {-1, 0, 1}}};
-  const std::array<std::array<int, 3>, 3> gy_kernel = {{{-1, -2, -1},
-                                                        {0, 0, 0},
-                                                        {1, 2, 1}}};
+  const std::array<std::array<int, 3>, 3> gx_kernel = {{{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}}};
+  const std::array<std::array<int, 3>, 3> gy_kernel = {{{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}}};
 
   auto &output = GetOutput();
   const auto &gray = grayscale_;
   const int h = height_;
   const int w = width_;
 
-  tbb::parallel_for(
-      tbb::blocked_range<int>(1, h - 1),
-      [&](const tbb::blocked_range<int> &range) {
-        for (int row = range.begin(); row != range.end(); ++row) {
-          for (int col = 1; col < w - 1; ++col) {
-            int gx = 0;
-            int gy = 0;
+  tbb::parallel_for(tbb::blocked_range<int>(1, h - 1), [&](const tbb::blocked_range<int> &range) {
+    for (int row = range.begin(); row != range.end(); ++row) {
+      for (int col = 1; col < w - 1; ++col) {
+        int gx = 0;
+        int gy = 0;
 
-            for (int ky = -1; ky <= 1; ++ky) {
-              for (int kx = -1; kx <= 1; ++kx) {
-                int pixel = gray[((row + ky) * w) + (col + kx)];
-                gx += pixel * gx_kernel.at(ky + 1).at(kx + 1);
-                gy += pixel * gy_kernel.at(ky + 1).at(kx + 1);
-              }
-            }
-
-            int magnitude = static_cast<int>(
-                std::sqrt(static_cast<double>((gx * gx) + (gy * gy))));
-            output[(row * w) + col] = magnitude;
+        for (int ky = -1; ky <= 1; ++ky) {
+          for (int kx = -1; kx <= 1; ++kx) {
+            int pixel = gray[((row + ky) * w) + (col + kx)];
+            gx += pixel * gx_kernel.at(ky + 1).at(kx + 1);
+            gy += pixel * gy_kernel.at(ky + 1).at(kx + 1);
           }
         }
-      });
+
+        int magnitude = static_cast<int>(std::sqrt(static_cast<double>((gx * gx) + (gy * gy))));
+        output[(row * w) + col] = magnitude;
+      }
+    }
+  });
 
   return true;
 }
