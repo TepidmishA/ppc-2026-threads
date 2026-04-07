@@ -9,8 +9,8 @@
 #include "zenin_a_radix_sort_double_batcher_merge/omp/include/ops_omp.hpp"
 #include "zenin_a_radix_sort_double_batcher_merge/seq/include/ops_seq.hpp"
 // #include "zenin_a_radix_sort_double_batcher_merge/stl/include/ops_stl.hpp"
-// #include "zenin_a_radix_sort_double_batcher_merge/tbb/include/ops_tbb.hpp"
 #include "util/include/perf_test_util.hpp"
+#include "zenin_a_radix_sort_double_batcher_merge/tbb/include/ops_tbb.hpp"
 
 namespace zenin_a_radix_sort_double_batcher_merge {
 
@@ -55,7 +55,8 @@ TEST_P(ZeninARadixSortDoubleBatcherMergePerfTestsThreads, RunPerfModes) {
 namespace {
 
 const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, ZeninARadixSortDoubleBatcherMergeOMP, ZeninARadixSortDoubleBatcherMergeSeqseq>(
+    ppc::util::MakeAllPerfTasks<InType, ZeninARadixSortDoubleBatcherMergeOMP, ZeninARadixSortDoubleBatcherMergeSeqseq,
+                                ZeninARadixSortDoubleBatcherMergeTBB>(
         PPC_SETTINGS_zenin_a_radix_sort_double_batcher_merge);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
