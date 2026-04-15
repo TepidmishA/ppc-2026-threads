@@ -55,25 +55,32 @@ bool PerepelkinIConvexHullGrahamScanOMP::RunImpl() {
 
 size_t PerepelkinIConvexHullGrahamScanOMP::FindPivotParallel(const std::vector<std::pair<double, double>> &pts) {
   size_t pivot_idx = 0;
+  const int threads = ppc::util::GetNumThreads();
+  std::vector<size_t> local_idx(threads, 0);
 
-#pragma omp parallel default(none) shared(pts, pivot_idx) num_threads(ppc::util::GetNumThreads())
+#pragma omp parallel default(none) shared(pts, local_idx) num_threads(threads)
   {
-    size_t local_idx = pivot_idx;
+    int tid = omp_get_thread_num();
+    size_t local = 0;
 
 #pragma omp for nowait
     for (size_t i = 1; i < pts.size(); i++) {
-      if (pts[i].second < pts[local_idx].second ||
-          (pts[i].second == pts[local_idx].second && pts[i].first < pts[local_idx].first)) {
-        local_idx = i;
+      if (pts[i].second < pts[local].second ||
+          (pts[i].second == pts[local].second && pts[i].first < pts[local].first)) {
+        local = i;
       }
     }
 
-#pragma omp critical
-    {
-      if (pts[local_idx].second < pts[pivot_idx].second ||
-          (pts[local_idx].second == pts[pivot_idx].second && pts[local_idx].first < pts[pivot_idx].first)) {
-        pivot_idx = local_idx;
-      }
+    local_idx[tid] = local;
+  }
+
+  // Sequential reduction
+  for (int tid = 0; tid < threads; tid++) {
+    size_t i = local_idx[tid];
+
+    if (pts[i].second < pts[pivot_idx].second ||
+        (pts[i].second == pts[pivot_idx].second && pts[i].first < pts[pivot_idx].first)) {
+      pivot_idx = i;
     }
   }
 
