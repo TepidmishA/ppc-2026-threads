@@ -47,18 +47,7 @@ bool PerepelkinIConvexHullGrahamScanOMP::RunImpl() {
 
   // Sequential hull construction
   std::vector<std::pair<double, double>> hull;
-  hull.reserve(pts.size() + 1);
-
-  hull.push_back(pivot);
-  hull.push_back(pts[0]);
-
-  for (size_t i = 1; i < pts.size(); i++) {
-    while (hull.size() >= 2 && Orientation(hull[hull.size() - 2], hull[hull.size() - 1], pts[i]) <= 0) {
-      hull.pop_back();
-    }
-
-    hull.push_back(pts[i]);
-  }
+  HullConstruction(hull, pts, pivot);
 
   GetOutput() = std::move(hull);
   return true;
@@ -128,6 +117,23 @@ void PerepelkinIConvexHullGrahamScanOMP::ParallelSort(std::vector<std::pair<doub
       std::inplace_merge(data.begin() + left, data.begin() + mid, data.begin() + right,
                          [&](const auto &a, const auto &b) { return AngleCmp(a, b, pivot); });
     }
+  }
+}
+
+void PerepelkinIConvexHullGrahamScanOMP::HullConstruction(
+    std::vector<std::pair<double, double>> &hull, const std::vector<std::pair<double, double>> &pts,
+    const std::pair<double, double> &pivot) {
+  hull.reserve(pts.size() + 1);
+
+  hull.push_back(pivot);
+  hull.push_back(pts[0]);
+
+  for (size_t i = 1; i < pts.size(); i++) {
+    while (hull.size() >= 2 && Orientation(hull[hull.size() - 2], hull[hull.size() - 1], pts[i]) <= 0) {
+      hull.pop_back();
+    }
+
+    hull.push_back(pts[i]);
   }
 }
 
