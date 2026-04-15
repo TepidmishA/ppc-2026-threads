@@ -54,8 +54,7 @@ bool PerepelkinIConvexHullGrahamScanOMP::RunImpl() {
 }
 
 size_t PerepelkinIConvexHullGrahamScanOMP::FindPivotParallel(const std::vector<std::pair<double, double>> &pts) {
-  size_t pivot_idx = 0;
-  const int threads = ppc::util::GetNumThreads();
+  const int threads = std::min(ppc::util::GetNumThreads(), static_cast<int>(pts.size()));
   std::vector<size_t> local_idx(threads, 0);
 
 #pragma omp parallel default(none) shared(pts, local_idx) num_threads(threads)
@@ -75,6 +74,8 @@ size_t PerepelkinIConvexHullGrahamScanOMP::FindPivotParallel(const std::vector<s
   }
 
   // Sequential reduction
+  size_t pivot_idx = 0;
+
   for (int tid = 0; tid < threads; tid++) {
     size_t i = local_idx[tid];
 
@@ -89,15 +90,14 @@ size_t PerepelkinIConvexHullGrahamScanOMP::FindPivotParallel(const std::vector<s
 
 void PerepelkinIConvexHullGrahamScanOMP::ParallelSort(std::vector<std::pair<double, double>> &data,
                                                       const std::pair<double, double> &pivot) {
-  size_t n = data.size();
-  int threads = ppc::util::GetNumThreads();
+  const int threads = std::min(ppc::util::GetNumThreads(), static_cast<int>(data.size()));
 
-  std::vector<int> start(threads + 1);
-  for (int i = 0; i <= threads; i++) {
-    start[i] = static_cast<int>(i * n / threads);
-  }
+  // Partitioning
+  std::vector<size_t> start(threads + 1);
+  DataPartitioning(data.size(), threads, start);
 
-#pragma omp parallel default(none) shared(data, start, pivot) num_threads(ppc::util::GetNumThreads())
+  // Parallel local sorting
+#pragma omp parallel default(none) shared(data, start, pivot) num_threads(threads)
   {
     int tid = omp_get_thread_num();
     std::sort(data.begin() + start[tid], data.begin() + start[tid + 1],
@@ -106,7 +106,7 @@ void PerepelkinIConvexHullGrahamScanOMP::ParallelSort(std::vector<std::pair<doub
 
   // Merge sorted segments
   for (int size = 1; size < threads; size *= 2) {
-#pragma omp parallel for default(none) shared(data, start, threads, size, pivot) num_threads(ppc::util::GetNumThreads())
+#pragma omp parallel for default(none) shared(data, start, threads, size, pivot) num_threads(threads)
     for (int i = 0; i < threads; i += 2 * size) {
       if (i + size >= threads) {
         continue;
@@ -120,6 +120,23 @@ void PerepelkinIConvexHullGrahamScanOMP::ParallelSort(std::vector<std::pair<doub
                          [&](const auto &a, const auto &b) { return AngleCmp(a, b, pivot); });
     }
   }
+}
+
+void PerepelkinIConvexHullGrahamScanOMP::DataPartitioning(size_t total_size, const int &threads,
+                                                          std::vector<size_t> &start) {
+  size_t base = total_size / threads;
+  size_t rem = total_size % threads;
+
+  size_t offset = 0;
+
+  for (int i = 0; i < threads; i++) {
+    start[i] = offset;
+
+    size_t extra = (i < static_cast<int>(rem)) ? 1 : 0;
+    offset += base + extra;
+  }
+
+  start[threads] = total_size;
 }
 
 void PerepelkinIConvexHullGrahamScanOMP::HullConstruction(std::vector<std::pair<double, double>> &hull,
