@@ -68,14 +68,10 @@ bool CheckLabelsValues(const OutType &output_data, const InType &image) {
   for (int ii = 0; ii < image.height; ++ii) {
     for (int jj = 0; jj < image.width; ++jj) {
       auto idx = (static_cast<size_t>(ii) * static_cast<size_t>(image.width)) + static_cast<size_t>(jj);
-      if (image.data[idx] == 1) {
-        if (output_data.labels[ii][jj] != 0) {
-          return false;
-        }
-      } else {
-        if (output_data.labels[ii][jj] <= 0) {
-          return false;
-        }
+      const bool is_background = image.data[idx] == 1;
+      const bool label_is_valid = is_background ? (output_data.labels[ii][jj] == 0) : (output_data.labels[ii][jj] > 0);
+      if (!label_is_valid) {
+        return false;
       }
     }
   }
